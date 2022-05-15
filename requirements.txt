@@ -1,3 +1,5 @@
 streamlit
-PIL
+Pillow
 ccxt
+datetime
+sqlite3
