@@ -2,4 +2,3 @@ streamlit
 Pillow
 ccxt
 datetime
-sqlite3
