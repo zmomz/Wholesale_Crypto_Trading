@@ -75,11 +75,15 @@ if Select_menu == "Buy Trade":
    st.write(order_coins)
    
 
+   try:
+      ccxt_bal= exchange.fetch_balance({'recvWindow': 60000})
+      usdt_balance=round(ccxt_bal['USDT']['free'])
+   except:
+      usdt_balance = "Please Enter your API key & Secret"
    # Balance Info
    usdt_amount = st.number_input("Amount in USDT to trade for each Pair",min_value=0)
-   usdt_balance=model.check_usdt_balance()
    st.text("Balance information:")
-   st.caption (f"USDT Balance:  {round(usdt_balance)} ")
+   st.caption (f"USDT Balance:  {usdt_balance} ")
    st.caption (f"Number of chosen coins:  {len(order_coins)} ")
    st.caption (f"Estimated Cost of purchase order: {len(order_coins)*usdt_amount}")
 

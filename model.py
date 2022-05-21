@@ -89,13 +89,6 @@ def make_special_coins(selected,all_Symbols):
 #         con.commit()
 
 
-def check_usdt_balance():
-    with sqlite3.connect("data.db") as con:
-        cur = con.cursor()
-        cur.execute(f"SELECT volume_in_wallet FROM symbols WHERE symbol = 'USDT'")
-        data = cur.fetchall()[0][0]
-        return data
-
 def update_after_buy(symbol,costed,volume_in_wallet, fees):
     print("costed",costed,"symbol",symbol,"vol",volume_in_wallet)
     with sqlite3.connect("data.db") as con:
