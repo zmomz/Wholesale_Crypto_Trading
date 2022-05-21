@@ -53,15 +53,19 @@ if Select_menu == "Buy Trade":
    empty_lst=[]
    all_symbols = list(set(model.get_all_symbols()))
    special_coins = list(set(model.get_special_coins()))
+   sold_coins = list(set(model.get_sold_coins()))
+
    st.subheader("Buy Trade:")
-   selection_mode = st.radio("Select your desired coins:", ('Select All', 'Unselect All', 'Special Coins'))
+   selection_mode = st.radio("Select your desired coins:", ('Select All', 'Unselect All', 'Special Coins', 'Frequantly Sold'))
 
    if selection_mode == 'Select All':
       default_coins = all_symbols
    elif selection_mode == 'Unselect All':
       default_coins = empty_lst
-   else:
+   elif selection_mode == 'Special Coins':
       default_coins = special_coins
+   else:
+      default_coins = sold_coins
    
    order_coins = st.multiselect(" ",all_symbols,default_coins)
    if selection_mode == 'Special Coins':
@@ -129,12 +133,17 @@ if Select_menu == "Sell Trade":
 
    order_list = st.multiselect(label=" ",options=selection_list,default=selection_list, format_func=modify_list)
 
-
-   amount = st.number_input("amount to sell (in USDT): ", min_value=0)
+   selling_type = st.radio(
+   "Please Select Selling Option.",
+   ("USD", "Percentage %"))
+   if selling_type == "USD":
+      order_amount = st.number_input("amount to sell (in USDT): ", min_value=0)
+   else:
+      order_amount = st.slider("Percentage to sell: ", min_value=0, max_value=100, value=50, step=10)
 
    submit_button = st.button(label="Execute Orders")
    if submit_button:
-      model.create_sell_order(amount_usdt= amount, options_selected= order_list, params= params,exchange=exchange)
+      model.create_sell_order(options_selected= order_list, params= params,exchange=exchange,type= selling_type, sell_amount= order_amount)
 
 #############
 # Auto SELL #

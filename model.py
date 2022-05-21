@@ -33,7 +33,7 @@ def get_last_price(symbol,exchange):
 def create_table():
     with sqlite3.connect("data.db") as con:
         cur = con.cursor()
-        cur.execute("CREATE TABLE IF NOT EXISTS symbols(symbol TEXT, costed REAL, volume_in_wallet REAL, last_price REAL, special REAL)")
+        cur.execute("CREATE TABLE IF NOT EXISTS symbols(symbol TEXT, costed REAL, volume_in_wallet REAL, last_price REAL, special REAL, sold REAL)")
         con.commit()
 
 def update_table(exchange):
@@ -42,7 +42,7 @@ def update_table(exchange):
         cur = con.cursor()
         for pair in balance:
             last_price = get_last_price(pair['asset'],exchange)
-            cur.execute("INSERT INTO symbols(symbol, costed, volume_in_wallet, last_price, special) VALUES (?,?,?,?,?)", (pair['asset'],0,0,last_price,0))
+            cur.execute("INSERT INTO symbols(symbol, costed, volume_in_wallet, last_price, special, sold) VALUES (?,?,?,?,?,?)", (pair['asset'],0,0,last_price,0,0))
             con.commit()
 
 def get_all_symbols():
@@ -59,12 +59,12 @@ def get_special_coins():
         data = [x[0] for x in cur.fetchall() if x[0] != "USDT"]
         return data
 
-# def get_special_coins():
-#     with sqlite3.connect("data.db") as con:
-#         cur = con.cursor()
-#         cur.execute("SELECT symbol FROM symbols WHERE special = 1")
-#         data = [x[0] for x in cur.fetchall() if x[0] != "USDT"]
-#         return data
+def get_sold_coins():
+    with sqlite3.connect("data.db") as con:
+        cur = con.cursor()
+        cur.execute(f"SELECT symbol FROM symbols WHERE sold = 1")
+        data = [x[0] for x in cur.fetchall() if x[0] != "USDT"]
+        return data
 
 def make_special_coins(selected,all_Symbols):
     print(selected)
@@ -96,11 +96,11 @@ def check_usdt_balance():
         data = cur.fetchall()[0][0]
         return data
 
-def update_after_buy(symbol,costed,volume_in_wallet):
+def update_after_buy(symbol,costed,volume_in_wallet, fees):
     print("costed",costed,"symbol",symbol,"vol",volume_in_wallet)
     with sqlite3.connect("data.db") as con:
         cur = con.cursor()
-        cur.execute(f"UPDATE symbols SET costed = costed + {costed}, volume_in_wallet = volume_in_wallet + {volume_in_wallet} WHERE symbol='{symbol}'")
+        cur.execute(f"UPDATE symbols SET costed = costed + {costed + fees}, volume_in_wallet = volume_in_wallet + {volume_in_wallet} WHERE symbol='{symbol}'")
         con.commit()
 
 def create_buy_order(usdt_amount,order_coins,params,exchange):
@@ -122,13 +122,17 @@ def create_buy_order(usdt_amount,order_coins,params,exchange):
             
             try:
                 order=exchange.create_market_order(symbol=coinusdt, side="buy", amount=amount, params=params)
+                cost = order['cost']
+                fee = order['fee']['cost'] if order['fee']['cost'] != None else 0
+                currency = order['fee']['currency']
+                volume = order['filled']
                 print(order)
-                st.success(f"We bought {amount} from coin {coin}")
+                st.success(f"We bought {cost} from coin {coin}, fee= {fee} {currency}")
                 if not params["test"]:
                     #  order['filled']: of base currency
                     #  order['price']: USDT
                     #  order['cost']: Price * filled
-                    update_after_buy(symbol=coin,costed=order['cost'],volume_in_wallet=order['filled'])
+                    update_after_buy(symbol=coin,costed=cost,volume_in_wallet=volume, fees= fee)
                 # st.write(order)
                 time.sleep(0.5)
             except Exception as e:
@@ -164,35 +168,37 @@ def update_price(symbol,exchange):
             cur.execute(f"UPDATE symbols SET last_price = {last_price} WHERE symbol = '{symbol}'")
             con.commit()
 
-def update_after_sell(symbol,gained,volume_reduction):
+def update_after_sell(symbol,gained,volume_reduction,fees):
     with sqlite3.connect("data.db") as con:
         cur = con.cursor()
-        cur.execute(f"UPDATE symbols SET costed = costed - {gained}, volume_in_wallet = volume_in_wallet - {volume_reduction} WHERE symbol='{symbol}'")
+        cur.execute(f"UPDATE symbols SET costed = costed - {gained-fees}, volume_in_wallet = volume_in_wallet - {volume_reduction}, sold = 1 WHERE symbol='{symbol}'")
         con.commit()
 
-def create_sell_order(amount_usdt,options_selected,params,exchange):
+def create_sell_order(options_selected,params,exchange,type,sell_amount):
     print(options_selected)
     if len(options_selected) <= 0:
         st.warning("Please Add coin to buy!")
     else :
         for selected in options_selected :
-            amount = amount_usdt / selected['last_price']
+            amount = sell_amount / selected['last_price'] if type =='USD' else selected['volume'] * sell_amount/100
             symbol = selected['symbol'] +'/USDT'            
             try:
                 order=exchange.create_market_order(symbol=symbol, side="sell", amount=amount, params=params)
                 print(order)
-                st.success(f"We sold {amount} from coin {symbol}")
+                cost = order['cost']
+                fee = order['fee']['cost'] if order['fee']['cost'] != None else 0
+                currency = order['fee']['currency']
+                volume = order['filled']
+                st.success(f"We sold $ {cost} from coin {symbol}, fees={fee} {currency}")
                 if not params["test"]:
                     #  order['filled']: of base currency
                     #  order['price']: USDT
                     #  order['cost']: Price * filled
-                    update_after_sell(symbol=selected['symbol'],gained=order['cost'],volume_reduction=order['filled'])
+                    update_after_sell(symbol=selected['symbol'],gained=cost,volume_reduction=volume,fees= fee)
                 # st.write(order)
                 time.sleep(0.5)
             except Exception as e:
                 st.write(f"an exception occured - {e}")
-
-
 
 # {'info': {}, 'id': None, 'clientOrderId': None, 'timestamp': None, 'datetime': None, 'lastTradeTimestamp': None, 'symbol': 'ETH/USDT',
 #  'type': None, 'timeInForce': None, 'postOnly': False, 'side': None, 'price': None, 'stopPrice': None, 'amount': None, 'cost': None,
