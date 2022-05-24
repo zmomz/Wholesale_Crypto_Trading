@@ -198,4 +198,8 @@ def create_sell_order(options_selected,params,exchange,type,sell_amount):
 #  'average': None, 'filled': 0.0, 'remaining': None, 'status': None, 'fee': None, 'trades': [], 'fees': []}
 
 
-
+def reset_coins():
+    with sqlite3.connect("data.db") as con:
+        cur = con.cursor()
+        cur.execute(f"UPDATE symbols SET costed = 0, volume_in_wallet = 0")
+        con.commit()

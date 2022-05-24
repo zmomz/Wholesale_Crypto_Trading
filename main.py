@@ -39,6 +39,8 @@ test_mode = st.sidebar.checkbox("Test Mode: ",value=True)
 params = {
    "test": test_mode  # test if it"s valid, but don"t actually place it
          }
+##########
+reset = st.sidebar.button("Reset wallet",on_click=model.reset_coins)
 
 
 ############
