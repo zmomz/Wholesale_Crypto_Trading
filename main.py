@@ -40,7 +40,18 @@ params = {
    "test": test_mode  # test if it"s valid, but don"t actually place it
          }
 ##########
-reset = st.sidebar.button("Reset wallet",on_click=model.reset_coins)
+reset = st.sidebar.expander("Reset Options")
+with reset:
+   reset_menu = st.selectbox(
+      " ",
+      ("Reset All", "Choose coins")
+   )
+   if reset_menu == "Reset All":
+      st.button("Reset",on_click=model.reset_coins)
+   else:
+      all_list = model.get_bought_coins()
+      reset_list = st.multiselect(" ", options=all_list)
+      st.button("Reset", on_click=model.reset_selected_coins, kwargs={"lst":reset_list})
 
 
 ############

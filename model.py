@@ -67,7 +67,6 @@ def get_sold_coins():
         return data
 
 def make_special_coins(selected,all_Symbols):
-    print(selected)
     with sqlite3.connect("data.db") as con:
         cur = con.cursor()
         for symbol in all_Symbols:
@@ -203,3 +202,17 @@ def reset_coins():
         cur = con.cursor()
         cur.execute(f"UPDATE symbols SET costed = 0, volume_in_wallet = 0")
         con.commit()
+
+def reset_selected_coins(lst):
+    with sqlite3.connect("data.db") as con:
+        cur = con.cursor()
+        for symbol in lst:
+            cur.execute(f"UPDATE symbols SET costed = 0, volume_in_wallet = 0 WHERE symbol = '{symbol}'")
+            con.commit()
+
+def get_bought_coins():
+    with sqlite3.connect("data.db") as con:
+        cur = con.cursor()
+        cur.execute("SELECT symbol FROM symbols WHERE costed > 0 AND symbol != 'USDT'")
+        data = [x[0] for x in cur.fetchall() if x[0] != "USDT"]
+        return data
