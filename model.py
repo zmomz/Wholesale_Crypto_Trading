@@ -114,17 +114,19 @@ def create_buy_order(usdt_amount,order_coins,params,exchange):
             
             try:
                 order=exchange.create_market_order(symbol=coinusdt, side="buy", amount=amount, params=params)
-                cost = order['cost']
-                fee = order['fee']['cost'] if order['fee']['cost'] != None else 0
-                currency = order['fee']['currency']
-                volume = order['filled']
-                print(order)
-                st.success(f"We bought {cost} from coin {coin}, fee= {fee} {currency}")
                 if not params["test"]:
+                    cost = order['cost']
+                    fee = order['fee']['cost'] if order['fee']['cost'] != None else 0
+                    currency = order['fee']['currency']
+                    volume = order['filled']
+                    print(order)
+                    st.success(f"We bought {cost} from coin {coin}, fee= {fee} {currency}")
                     #  order['filled']: of base currency
                     #  order['price']: USDT
                     #  order['cost']: Price * filled
                     update_after_buy(symbol=coin,costed=cost,volume_in_wallet=volume, fees= fee)
+                else:
+                    update_after_buy(symbol=coin, costed=usdt_amount, volume_in_wallet=amount, fees =0)
                 # st.write(order)
                 time.sleep(0.5)
             except Exception as e:
